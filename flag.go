@@ -18,6 +18,12 @@
 //
 // See the package examples for a full, working builder.
 //
+// Builders are plain values: each WithX returns a copy with one type
+// parameter advanced, so distinct builder values share no state and may be
+// used concurrently. A single builder value, like any value, must not be
+// mutated from multiple goroutines at once — but the API never mutates in
+// place, so ordinary use is race-free.
+//
 // This package is the runtime vocabulary (v0.1). A go:generate code
 // generator that emits these builders from an annotated struct is planned
 // (v0.2); the generated code targets exactly the shape shown above.

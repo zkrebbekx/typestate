@@ -1,6 +1,7 @@
 package typestate_test
 
 import (
+	"sync"
 	"testing"
 
 	ts "github.com/zkrebbekx/typestate"
@@ -87,6 +88,32 @@ func TestClientBuilder(t *testing.T) {
 
 			Convey("Then the override wins over the default", func() {
 				So(c.Port, ShouldEqual, 9090)
+			})
+		})
+	})
+}
+
+func TestConcurrentIndependentBuilders(t *testing.T) {
+	Convey("Given many goroutines each building from a fresh builder", t, func() {
+		const n = 50
+		var wg sync.WaitGroup
+		results := make([]Client, n)
+
+		Convey("When they build concurrently (race detector on)", func() {
+			for i := 0; i < n; i++ {
+				wg.Add(1)
+				go func(i int) {
+					defer wg.Done()
+					results[i] = build(newClient().WithName("svc").WithURL("u"))
+				}(i)
+			}
+			wg.Wait()
+
+			Convey("Then every result is correct with no data race", func() {
+				for _, c := range results {
+					So(c.Name, ShouldEqual, "svc")
+					So(c.Port, ShouldEqual, 8080)
+				}
 			})
 		})
 	})
